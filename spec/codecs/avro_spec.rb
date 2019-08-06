@@ -108,7 +108,47 @@ describe LogStash::Codecs::Avro do
             insist {event.get("latitude")} == test_event.get("latitude")
           end
         end
+
       end
+
+      context "binary data without base64 encoding" do
+      
+        let (:avro_config) {{ 'schema_uri' => '{"namespace": "com.systems.test.data",
+                      "type": "record",
+                      "name": "TestRecord",
+                      "fields": [
+                        {"name": "name", "type": ["string", "null"]},
+                        {"name": "longitude", "type": ["double", "null"]},
+                        {"name": "latitude", "type": ["double", "null"]}
+                      ]
+                    }',
+                    'base64_encode' => false
+         }}
+        let (:test_event) {LogStash::Event.new({ "name" => "foo", "longitude" => 21.01234.to_f, "latitude" => 111.0123.to_f })}
+
+        subject do
+          allow_any_instance_of(LogStash::Codecs::Avro).to \
+      receive(:open_and_read).and_return(avro_config['schema_uri'])
+          next LogStash::Codecs::Avro.new(avro_config)
+        end
+
+        it "should correctly encode binary data" do
+          schema = Avro::Schema.parse(avro_config['schema_uri'])
+          dw = Avro::IO::DatumWriter.new(schema)
+          buffer = StringIO.new
+          encoder = Avro::IO::BinaryEncoder.new(buffer)
+          dw.write(test_event.to_hash, encoder)
+
+          subject.decode(buffer.string) do |event|
+            insist {event.is_a? LogStash::Event}
+            insist {event.get("name")} == test_event.get("name")
+            insist {event.get("longitude")} == test_event.get("longitude")
+            insist {event.get("latitude")} == test_event.get("latitude")
+          end
+        end
+
+      end
+
     end
   end
 end

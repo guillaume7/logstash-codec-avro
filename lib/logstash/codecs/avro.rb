@@ -74,7 +74,11 @@ class LogStash::Codecs::Avro < LogStash::Codecs::Base
 
   public
   def decode(data)
-    datum = StringIO.new(Base64.strict_decode64(data)) rescue StringIO.new(data)
+    if base64_encode
+      datum = StringIO.new(Base64.strict_decode64(data)) rescue StringIO.new(data)
+    else
+      datum = StringIO.new(data)
+    end
     decoder = Avro::IO::BinaryDecoder.new(datum)
     datum_reader = Avro::IO::DatumReader.new(@schema)
     yield LogStash::Event.new(datum_reader.read(decoder))
@@ -100,3 +104,4 @@ class LogStash::Codecs::Avro < LogStash::Codecs::Base
     end
   end
 end
+
