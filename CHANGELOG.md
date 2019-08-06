@@ -1,3 +1,6 @@
+## 3.3.0
+  - Introduce `base64_encoding` option to enable/disable data encoding in base64. Possible values are <true|false>. Default value is true.
+
 ## 3.2.3
   - Update gemspec summary
 

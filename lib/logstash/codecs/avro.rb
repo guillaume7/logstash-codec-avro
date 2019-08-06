@@ -60,6 +60,9 @@ class LogStash::Codecs::Avro < LogStash::Codecs::Base
   # tag events with `_avroparsefailure` when decode fails
   config :tag_on_failure, :validate => :boolean, :default => false
 
+  # encodes with base64 when enabled
+  config :base64_encode, :validate => :boolean, :default => true
+
   def open_and_read(uri_string)
     open(uri_string).read
   end
@@ -90,6 +93,10 @@ class LogStash::Codecs::Avro < LogStash::Codecs::Base
     buffer = StringIO.new
     encoder = Avro::IO::BinaryEncoder.new(buffer)
     dw.write(event.to_hash, encoder)
-    @on_event.call(event, Base64.strict_encode64(buffer.string))
+    if base64_encode
+      @on_event.call(event, Base64.strict_encode64(buffer.string))
+    else
+      @on_event.call(event, buffer.string)
+    end
   end
 end
